@@ -6,6 +6,8 @@ import com.phamquocviet.courseservice.repository.CourseRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.Locale;
@@ -31,6 +33,23 @@ public class CourseService {
     }
 
     /*
+     * Tìm kiếm khóa học theo tên hoặc mã, có phân trang/sắp xếp.
+     * Nếu keyword rỗng thì trả về toàn bộ dữ liệu theo Pageable.
+     */
+    public Page<CourseDTO> search(String keyword, Pageable pageable) {
+
+        Page<Course> page = (keyword == null || keyword.isBlank())
+                ? courseRepository.findAll(pageable)
+                : courseRepository
+                        .findByCourseNameContainingIgnoreCaseOrCourseCodeContainingIgnoreCase(
+                                keyword.trim(),
+                                keyword.trim(),
+                                pageable);
+
+        return page.map(this::convertToDTO);
+    }
+
+    /*
      * Lấy một khóa học theo ID.
      */
     public CourseDTO getCourseById(Long id) {
@@ -43,13 +62,11 @@ public class CourseService {
      */
     @Transactional
     public CourseDTO createCourse(CourseDTO courseDTO) {
-        String normalizedCourseCode =
-                normalizeCourseCode(courseDTO.getCourseCode());
+        String normalizedCourseCode = normalizeCourseCode(courseDTO.getCourseCode());
 
         if (courseRepository.existsByCourseCode(normalizedCourseCode)) {
             throw new IllegalStateException(
-                    "Mã khóa học đã tồn tại: " + normalizedCourseCode
-            );
+                    "Mã khóa học đã tồn tại: " + normalizedCourseCode);
         }
 
         validateAvailableSeats(courseDTO);
@@ -59,8 +76,7 @@ public class CourseService {
         updateCourseEntity(
                 course,
                 courseDTO,
-                normalizedCourseCode
-        );
+                normalizedCourseCode);
 
         Course savedCourse = courseRepository.save(course);
 
@@ -74,19 +90,15 @@ public class CourseService {
     public CourseDTO updateCourse(Long id, CourseDTO courseDTO) {
         Course existingCourse = findCourseById(id);
 
-        String normalizedCourseCode =
-                normalizeCourseCode(courseDTO.getCourseCode());
+        String normalizedCourseCode = normalizeCourseCode(courseDTO.getCourseCode());
 
-        boolean courseCodeExists =
-                courseRepository.existsByCourseCodeAndIdNot(
-                        normalizedCourseCode,
-                        id
-                );
+        boolean courseCodeExists = courseRepository.existsByCourseCodeAndIdNot(
+                normalizedCourseCode,
+                id);
 
         if (courseCodeExists) {
             throw new IllegalStateException(
-                    "Mã khóa học đã tồn tại: " + normalizedCourseCode
-            );
+                    "Mã khóa học đã tồn tại: " + normalizedCourseCode);
         }
 
         validateAvailableSeats(courseDTO);
@@ -94,11 +106,9 @@ public class CourseService {
         updateCourseEntity(
                 existingCourse,
                 courseDTO,
-                normalizedCourseCode
-        );
+                normalizedCourseCode);
 
-        Course updatedCourse =
-                courseRepository.save(existingCourse);
+        Course updatedCourse = courseRepository.save(existingCourse);
 
         return convertToDTO(updatedCourse);
     }
@@ -119,8 +129,7 @@ public class CourseService {
     private Course findCourseById(Long id) {
         return courseRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException(
-                        "Không tìm thấy khóa học có ID: " + id
-                ));
+                        "Không tìm thấy khóa học có ID: " + id));
     }
 
     /*
@@ -135,8 +144,7 @@ public class CourseService {
                 && availableSeats > capacity) {
 
             throw new IllegalArgumentException(
-                    "Số chỗ còn lại không được lớn hơn sức chứa"
-            );
+                    "Số chỗ còn lại không được lớn hơn sức chứa");
         }
     }
 
@@ -161,8 +169,7 @@ public class CourseService {
     private void updateCourseEntity(
             Course course,
             CourseDTO courseDTO,
-            String normalizedCourseCode
-    ) {
+            String normalizedCourseCode) {
         course.setCourseCode(normalizedCourseCode);
         course.setCourseName(trim(courseDTO.getCourseName()));
         course.setInstructor(trim(courseDTO.getInstructor()));
@@ -206,5 +213,45 @@ public class CourseService {
         return status
                 .trim()
                 .toUpperCase(Locale.ROOT);
+    }
+
+    /*
+     * API nội bộ: giữ một chỗ học.
+     */
+    @Transactional
+    public CourseDTO reserveSeat(Long courseId) {
+
+        Course course = findCourseById(courseId);
+
+        if (course.getAvailableSeats() == null
+                || course.getAvailableSeats() <= 0) {
+
+            throw new IllegalStateException(
+                    "Khóa học đã hết chỗ, không thể đăng ký");
+        }
+
+        course.setAvailableSeats(
+                course.getAvailableSeats() - 1);
+
+        return convertToDTO(
+                courseRepository.save(course));
+    }
+
+    /*
+     * API nội bộ: trả lại một chỗ học.
+     * Không cho availableSeats vượt capacity.
+     */
+    @Transactional
+    public CourseDTO releaseSeat(Long courseId) {
+
+        Course course = findCourseById(courseId);
+
+        if (course.getAvailableSeats() < course.getCapacity()) {
+            course.setAvailableSeats(
+                    course.getAvailableSeats() + 1);
+        }
+
+        return convertToDTO(
+                courseRepository.save(course));
     }
 }
