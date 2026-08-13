@@ -8,6 +8,10 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpEntity;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 @Component
 public class CourseClient {
@@ -43,10 +47,16 @@ public class CourseClient {
 
         try {
 
+            HttpHeaders headers = new HttpHeaders();
+            ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+            if (attributes != null) {
+                String authorization = attributes.getRequest().getHeader(HttpHeaders.AUTHORIZATION);
+                if (authorization != null) headers.set(HttpHeaders.AUTHORIZATION, authorization);
+            }
             restTemplate.exchange(
                     url,
                     org.springframework.http.HttpMethod.PATCH,
-                    org.springframework.http.HttpEntity.EMPTY,
+                    new HttpEntity<>(headers),
                     String.class
             );
 
