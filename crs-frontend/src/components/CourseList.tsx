@@ -1,72 +1,98 @@
-import { useEffect, useState } from "react";
-import { getCourses } from "../api/courseApi";
 import type { Course } from "../types/course";
+import type { UseCoursesState } from "../hooks/useCourses";
 
-function CourseList() {
-  const [courses, setCourses] = useState<Course[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+interface CourseListProps {
+  courses: Course[];
+  state: UseCoursesState;
+  errorMessage: string;
+  refetch: () => void;
+}
 
-  useEffect(() => {
-    const fetchCourses = async () => {
-      try {
-        const data = await getCourses();
-
-        setCourses(data.content);
-      } catch (err) {
-        console.error(err);
-        setError("Không thể tải danh sách khóa học");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCourses();
-  }, []);
-
-  if (loading) {
-    return <p>Đang tải danh sách khóa học...</p>;
+function CourseList({ courses, state, errorMessage, refetch }: CourseListProps) {
+  if (state === "loading") {
+    return (
+      <div className="state-message">
+        <div className="spinner"></div>
+        <p>Đang tải danh sách môn học...</p>
+        <p className="sub-message">Vui lòng chờ trong giây lát.</p>
+      </div>
+    );
   }
 
-  if (error) {
-    return <p>{error}</p>;
+  if (state === "error") {
+    return (
+      <div className="state-message error">
+        <p>Không thể tải dữ liệu</p>
+        {errorMessage && <p className="error-detail">{errorMessage}</p>}
+        <button onClick={refetch} className="retry-btn">
+          Thử lại
+        </button>
+      </div>
+    );
   }
+
+  if (state === "empty") {
+    return (
+      <div className="state-message">
+        <p>Không tìm thấy môn học phù hợp.</p>
+        <p className="sub-message">Hãy thử một từ khóa khác.</p>
+      </div>
+    );
+  }
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case "OPEN":
+        return "Đang mở";
+      case "FULL":
+        return "Đã đầy";
+      case "CLOSED":
+        return "Đã đóng";
+      default:
+        return status;
+    }
+  };
 
   return (
-    <div>
-      <h2>Danh sách khóa học</h2>
+    <div className="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>STT</th>
+            <th>Mã môn học</th>
+            <th>Tên môn học</th>
+            <th>Giảng viên</th>
+            <th>Sức chứa</th>
+            <th>Còn chỗ</th>
+            <th>Học phí</th>
+            <th>Trạng thái</th>
+          </tr>
+        </thead>
 
-      {courses.length === 0 ? (
-        <p>Chưa có khóa học nào.</p>
-      ) : (
-        <table>
-          <thead>
-            <tr>
-              <th>Mã</th>
-              <th>Tên khóa học</th>
-              <th>Giảng viên</th>
-              <th>Sức chứa</th>
-              <th>Còn chỗ</th>
-              <th>Học phí</th>
-              <th>Trạng thái</th>
+        <tbody>
+          {courses.map((course, index) => (
+            <tr key={course.id}>
+              <td>{index + 1}</td>
+              <td className="font-semibold">{course.courseCode}</td>
+              <td>{course.courseName}</td>
+              <td>{course.instructor}</td>
+              <td>{course.capacity}</td>
+              <td>{course.availableSeats}</td>
+              <td>
+                {new Intl.NumberFormat("vi-VN", {
+                  style: "currency",
+                  currency: "VND",
+                }).format(course.price)}
+              </td>
+              <td>
+                <span className={`status-badge ${course.status.toLowerCase()}`}>
+                  {getStatusText(course.status)}
+                </span>
+              </td>
             </tr>
-          </thead>
-
-          <tbody>
-            {courses.map((course) => (
-              <tr key={course.id}>
-                <td>{course.courseCode}</td>
-                <td>{course.courseName}</td>
-                <td>{course.instructor}</td>
-                <td>{course.capacity}</td>
-                <td>{course.availableSeats}</td>
-                <td>{course.price}</td>
-                <td>{course.status}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
