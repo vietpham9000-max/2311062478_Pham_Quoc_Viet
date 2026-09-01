@@ -4,6 +4,7 @@ export interface LoginRequest {
 }
 
 export interface LoginResponse {
+  userId: number;
   token: string;
   username: string;
   role: "ADMIN" | "STUDENT";
@@ -12,6 +13,7 @@ export interface LoginResponse {
 export type UserRole = LoginResponse["role"];
 
 export interface AuthUser {
+  userId: number;
   username: string;
   role: UserRole;
 }

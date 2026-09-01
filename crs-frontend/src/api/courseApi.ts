@@ -20,6 +20,11 @@ export const getCourses = async (
   return response.data;
 };
 
+export const getCourseById = async (id: number): Promise<Course> => {
+  const response = await axiosClient.get<Course>(`/api/courses/${id}`);
+  return response.data;
+};
+
 export const createCourse = async (data: CoursePayload): Promise<Course> => {
   const response = await axiosClient.post<Course>("/api/courses", data);
   return response.data;

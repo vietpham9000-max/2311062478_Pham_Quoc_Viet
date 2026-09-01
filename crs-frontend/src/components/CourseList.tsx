@@ -8,10 +8,14 @@ interface CourseListProps {
   refetch: () => void;
   onEdit?: (course: Course) => void;
   onDelete?: (course: Course) => void;
+  onRegister?: (course: Course) => void;
+  registeringId?: number | null;
 }
 
-function CourseList({ courses, state, errorMessage, refetch, onEdit, onDelete }: CourseListProps) {
+function CourseList({ courses, state, errorMessage, refetch, onEdit, onDelete, onRegister, registeringId }: CourseListProps) {
   const showActions = Boolean(onEdit && onDelete);
+  const showRegister = Boolean(onRegister);
+  const showActionColumn = showActions || showRegister;
   if (state === "loading") {
     return (
       <div className="state-message">
@@ -69,7 +73,7 @@ function CourseList({ courses, state, errorMessage, refetch, onEdit, onDelete }:
             <th>Còn chỗ</th>
             <th>Học phí</th>
             <th>Trạng thái</th>
-            {showActions && <th>Thao tác</th>}
+            {showActionColumn && <th>Thao tác</th>}
           </tr>
         </thead>
 
@@ -98,6 +102,16 @@ function CourseList({ courses, state, errorMessage, refetch, onEdit, onDelete }:
                   <button className="edit-btn" type="button" onClick={() => onEdit?.(course)}>Sửa</button>
                   <button className="delete-btn" type="button" onClick={() => onDelete?.(course)}>Xóa</button>
                 </div>
+              </td>}
+              {showRegister && <td>
+                <button
+                  className="register-btn"
+                  type="button"
+                  onClick={() => onRegister?.(course)}
+                  disabled={registeringId === course.id || course.availableSeats === 0 || course.status !== "OPEN"}
+                >
+                  {course.availableSeats === 0 ? "Hết chỗ" : course.status !== "OPEN" ? "Không mở" : registeringId === course.id ? "Đang đăng ký..." : "Đăng ký"}
+                </button>
               </td>}
             </tr>
           ))}

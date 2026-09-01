@@ -5,6 +5,7 @@ import LoginPage from "./pages/LoginPage";
 import CoursesPage from "./pages/CoursesPage";
 import AdminCoursesPage from "./pages/admin/AdminCoursesPage";
 import RegisterCoursePage from "./pages/RegisterCoursePage";
+import MyRegistrationsPage from "./pages/MyRegistrationsPage";
 import "./App.css";
 
 function App() {
@@ -17,6 +18,7 @@ function App() {
         <Route path="/courses" element={<CoursesPage />} />
         <Route path="/admin/courses" element={<ProtectedRoute requiredRole="ADMIN"><AdminCoursesPage /></ProtectedRoute>} />
         <Route path="/register-course" element={<ProtectedRoute requiredRole="STUDENT"><RegisterCoursePage /></ProtectedRoute>} />
+        <Route path="/my-registrations" element={<ProtectedRoute requiredRole="STUDENT"><MyRegistrationsPage /></ProtectedRoute>} />
         <Route path="*" element={<Navigate to="/courses" replace />} />
       </Routes>
     </BrowserRouter>

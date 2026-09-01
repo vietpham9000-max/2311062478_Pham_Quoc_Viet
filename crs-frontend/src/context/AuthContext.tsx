@@ -20,16 +20,18 @@ const restoreUser = (): AuthUser | null => {
     const parsed: unknown = JSON.parse(storedUser);
     if (
       typeof parsed === "object" && parsed !== null &&
+      "userId" in parsed && typeof parsed.userId === "number" && parsed.userId > 0 &&
       "username" in parsed && typeof parsed.username === "string" &&
       "role" in parsed && (parsed.role === "ADMIN" || parsed.role === "STUDENT")
     ) {
-      return { username: parsed.username, role: parsed.role };
+      return { userId: parsed.userId, username: parsed.username, role: parsed.role };
     }
   } catch {
     // Invalid persisted JSON is cleared below.
   }
 
   localStorage.removeItem("crs_user");
+  localStorage.removeItem("crs_token");
   return null;
 };
 
@@ -37,7 +39,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<AuthUser | null>(restoreUser);
 
   const login = (response: LoginResponse) => {
-    const authUser: AuthUser = { username: response.username, role: response.role };
+    const authUser: AuthUser = { userId: response.userId, username: response.username, role: response.role };
     localStorage.setItem("crs_token", response.token);
     localStorage.setItem("crs_user", JSON.stringify(authUser));
     setUser(authUser);

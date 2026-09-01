@@ -17,6 +17,7 @@ const Navbar = () => {
         <NavLink to="/courses">Khóa học</NavLink>
         {user?.role === "ADMIN" && <NavLink to="/admin/courses">Quản trị môn học</NavLink>}
         {user?.role === "STUDENT" && <NavLink to="/register-course">Đăng ký khóa học</NavLink>}
+        {user?.role === "STUDENT" && <NavLink to="/my-registrations">Môn học đã đăng ký</NavLink>}
       </div>
       <div className="navbar-user">
         {user ? (
