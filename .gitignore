@@ -2,3 +2,4 @@
 **/*.log
 .vscode/
 **/.vscode/
+.env.docker

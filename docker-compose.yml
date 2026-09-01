@@ -1,0 +1,149 @@
+name: crs-microservices
+
+services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-crs-root-dev-only}
+      MYSQL_ROOT_HOST: "%"
+      TZ: Asia/Ho_Chi_Minh
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+    restart: unless-stopped
+
+  auth-service:
+    build:
+      context: ./auth-service
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/auth_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD:-crs-root-dev-only}
+      JWT_SECRET: ${JWT_SECRET:-VFJVT05HX01BTkhfREFfSldUX1NFQ1JFVF9LRVlfMjAyNiEh}
+    ports:
+      - "8081:8081"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 8081"]
+      interval: 10s
+      timeout: 3s
+      retries: 15
+      start_period: 30s
+    restart: unless-stopped
+
+  course-service:
+    build:
+      context: ./course-service
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/course_db?useSSL=false&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD:-crs-root-dev-only}
+      JWT_SECRET: ${JWT_SECRET:-VFJVT05HX01BTkhfREFfSldUX1NFQ1JFVF9LRVlfMjAyNiEh}
+    ports:
+      - "8082:8082"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 8082"]
+      interval: 10s
+      timeout: 3s
+      retries: 15
+      start_period: 30s
+    restart: unless-stopped
+
+  registration-service:
+    build:
+      context: ./registration-service
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/registration_db?useSSL=false&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD:-crs-root-dev-only}
+      COURSE_SERVICE_BASE_URL: http://course-service:8082
+      JWT_SECRET: ${JWT_SECRET:-VFJVT05HX01BTkhfREFfSldUX1NFQ1JFVF9LRVlfMjAyNiEh}
+    ports:
+      - "8083:8083"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      course-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 8083"]
+      interval: 10s
+      timeout: 3s
+      retries: 15
+      start_period: 30s
+    restart: unless-stopped
+
+  api-gateway:
+    build:
+      context: ./api-gateway
+    environment:
+      SPRING_CLOUD_GATEWAY_SERVER_WEBFLUX_ROUTES_0_ID: auth
+      SPRING_CLOUD_GATEWAY_SERVER_WEBFLUX_ROUTES_0_URI: http://auth-service:8081
+      SPRING_CLOUD_GATEWAY_SERVER_WEBFLUX_ROUTES_0_PREDICATES_0: Path=/api/auth/**
+      SPRING_CLOUD_GATEWAY_SERVER_WEBFLUX_ROUTES_0_FILTERS_0: StripPrefix=1
+      SPRING_CLOUD_GATEWAY_SERVER_WEBFLUX_ROUTES_1_ID: courses
+      SPRING_CLOUD_GATEWAY_SERVER_WEBFLUX_ROUTES_1_URI: http://course-service:8082
+      SPRING_CLOUD_GATEWAY_SERVER_WEBFLUX_ROUTES_1_PREDICATES_0: Path=/api/courses/**
+      SPRING_CLOUD_GATEWAY_SERVER_WEBFLUX_ROUTES_1_FILTERS_0: StripPrefix=1
+      SPRING_CLOUD_GATEWAY_SERVER_WEBFLUX_ROUTES_2_ID: registrations
+      SPRING_CLOUD_GATEWAY_SERVER_WEBFLUX_ROUTES_2_URI: http://registration-service:8083
+      SPRING_CLOUD_GATEWAY_SERVER_WEBFLUX_ROUTES_2_PREDICATES_0: Path=/api/registrations/**
+      SPRING_CLOUD_GATEWAY_SERVER_WEBFLUX_ROUTES_2_FILTERS_0: StripPrefix=1
+      SPRING_CLOUD_GATEWAY_SERVER_WEBFLUX_ROUTES_3_ID: public-courses
+      SPRING_CLOUD_GATEWAY_SERVER_WEBFLUX_ROUTES_3_URI: http://course-service:8082
+      SPRING_CLOUD_GATEWAY_SERVER_WEBFLUX_ROUTES_3_PREDICATES_0: Path=/api/public/courses/**
+      SPRING_CLOUD_GATEWAY_SERVER_WEBFLUX_ROUTES_3_FILTERS_0: 'RewritePath=/api/public/courses(?<segment>/?.*), /courses$${segment}'
+      GATEWAY_API_KEY: ${GATEWAY_API_KEY:-crs-partner-key-2026}
+    ports:
+      - "8080:8080"
+    depends_on:
+      auth-service:
+        condition: service_healthy
+      course-service:
+        condition: service_healthy
+      registration-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 8080"]
+      interval: 10s
+      timeout: 3s
+      retries: 15
+      start_period: 30s
+    restart: unless-stopped
+
+  crs-frontend:
+    build:
+      context: ./crs-frontend
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8080}
+    ports:
+      - "5173:80"
+    depends_on:
+      api-gateway:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/health | grep -q ok"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
