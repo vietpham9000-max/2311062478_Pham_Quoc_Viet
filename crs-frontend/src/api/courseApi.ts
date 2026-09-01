@@ -1,5 +1,5 @@
 import axiosClient from "./axiosClient";
-import type { Course, PageResponse } from "../types/course";
+import type { Course, CoursePayload, PageResponse } from "../types/course";
 
 export const getCourses = async (
   keyword = "",
@@ -18,4 +18,21 @@ export const getCourses = async (
   );
 
   return response.data;
+};
+
+export const createCourse = async (data: CoursePayload): Promise<Course> => {
+  const response = await axiosClient.post<Course>("/api/courses", data);
+  return response.data;
+};
+
+export const updateCourse = async (
+  id: number,
+  data: CoursePayload
+): Promise<Course> => {
+  const response = await axiosClient.put<Course>(`/api/courses/${id}`, data);
+  return response.data;
+};
+
+export const deleteCourse = async (id: number): Promise<void> => {
+  await axiosClient.delete(`/api/courses/${id}`);
 };

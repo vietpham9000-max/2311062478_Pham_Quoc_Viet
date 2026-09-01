@@ -6,9 +6,11 @@ interface CourseListProps {
   state: UseCoursesState;
   errorMessage: string;
   refetch: () => void;
+  onEdit: (course: Course) => void;
+  onDelete: (course: Course) => void;
 }
 
-function CourseList({ courses, state, errorMessage, refetch }: CourseListProps) {
+function CourseList({ courses, state, errorMessage, refetch, onEdit, onDelete }: CourseListProps) {
   if (state === "loading") {
     return (
       <div className="state-message">
@@ -66,6 +68,7 @@ function CourseList({ courses, state, errorMessage, refetch }: CourseListProps) 
             <th>Còn chỗ</th>
             <th>Học phí</th>
             <th>Trạng thái</th>
+            <th>Thao tác</th>
           </tr>
         </thead>
 
@@ -88,6 +91,12 @@ function CourseList({ courses, state, errorMessage, refetch }: CourseListProps) 
                 <span className={`status-badge ${course.status.toLowerCase()}`}>
                   {getStatusText(course.status)}
                 </span>
+              </td>
+              <td>
+                <div className="row-actions">
+                  <button className="edit-btn" type="button" onClick={() => onEdit(course)}>Sửa</button>
+                  <button className="delete-btn" type="button" onClick={() => onDelete(course)}>Xóa</button>
+                </div>
               </td>
             </tr>
           ))}

@@ -18,3 +18,5 @@ export interface PageResponse<T> {
   number: number;
   size: number;
 }
+
+export type CoursePayload = Omit<Course, "id">;

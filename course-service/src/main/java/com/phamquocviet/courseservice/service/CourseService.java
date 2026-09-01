@@ -63,10 +63,16 @@ public class CourseService {
     @Transactional
     public CourseDTO createCourse(CourseDTO courseDTO) {
         String normalizedCourseCode = normalizeCourseCode(courseDTO.getCourseCode());
+        String normalizedCourseName = trim(courseDTO.getCourseName());
 
         if (courseRepository.existsByCourseCode(normalizedCourseCode)) {
             throw new IllegalStateException(
                     "Mã khóa học đã tồn tại: " + normalizedCourseCode);
+        }
+
+        if (courseRepository.existsByCourseNameIgnoreCase(normalizedCourseName)) {
+            throw new IllegalStateException(
+                    "Tên môn học đã tồn tại: " + normalizedCourseName);
         }
 
         validateAvailableSeats(courseDTO);
@@ -76,7 +82,8 @@ public class CourseService {
         updateCourseEntity(
                 course,
                 courseDTO,
-                normalizedCourseCode);
+                normalizedCourseCode,
+                normalizedCourseName);
 
         Course savedCourse = courseRepository.save(course);
 
@@ -91,6 +98,7 @@ public class CourseService {
         Course existingCourse = findCourseById(id);
 
         String normalizedCourseCode = normalizeCourseCode(courseDTO.getCourseCode());
+        String normalizedCourseName = trim(courseDTO.getCourseName());
 
         boolean courseCodeExists = courseRepository.existsByCourseCodeAndIdNot(
                 normalizedCourseCode,
@@ -101,12 +109,23 @@ public class CourseService {
                     "Mã khóa học đã tồn tại: " + normalizedCourseCode);
         }
 
+
+        boolean courseNameExists = courseRepository.existsByCourseNameIgnoreCaseAndIdNot(
+                normalizedCourseName,
+                id);
+
+        if (courseNameExists) {
+            throw new IllegalStateException(
+                    "Tên môn học đã tồn tại: " + normalizedCourseName);
+        }
+
         validateAvailableSeats(courseDTO);
 
         updateCourseEntity(
                 existingCourse,
                 courseDTO,
-                normalizedCourseCode);
+                normalizedCourseCode,
+                normalizedCourseName);
 
         Course updatedCourse = courseRepository.save(existingCourse);
 
@@ -169,9 +188,10 @@ public class CourseService {
     private void updateCourseEntity(
             Course course,
             CourseDTO courseDTO,
-            String normalizedCourseCode) {
+            String normalizedCourseCode,
+            String normalizedCourseName) {
         course.setCourseCode(normalizedCourseCode);
-        course.setCourseName(trim(courseDTO.getCourseName()));
+        course.setCourseName(normalizedCourseName);
         course.setInstructor(trim(courseDTO.getInstructor()));
         course.setCapacity(courseDTO.getCapacity());
         course.setAvailableSeats(courseDTO.getAvailableSeats());

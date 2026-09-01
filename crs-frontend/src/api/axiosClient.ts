@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const axiosClient = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL,
+  baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:8080",
   headers: {
     "Content-Type": "application/json",
   },
@@ -9,7 +9,7 @@ const axiosClient = axios.create({
 
 axiosClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("crs_token");
 
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -18,17 +18,6 @@ axiosClient.interceptors.request.use(
     return config;
   },
   (error) => Promise.reject(error)
-);
-
-axiosClient.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem("token");
-    }
-
-    return Promise.reject(error);
-  }
 );
 
 export default axiosClient;

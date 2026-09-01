@@ -62,6 +62,85 @@ body {
   width: 100%;
 }
 
+.course-form-card {
+  background: var(--card-bg);
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .08);
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+}
+
+.course-form-card h2 { margin-bottom: 1.25rem; }
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.form-grid label {
+  display: flex;
+  flex-direction: column;
+  font-size: .875rem;
+  font-weight: 600;
+  gap: .4rem;
+}
+
+.form-grid input,
+.form-grid select {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font: inherit;
+  padding: .6rem .75rem;
+}
+
+.form-grid input:focus,
+.form-grid select:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, .15);
+  outline: none;
+}
+
+.field-error {
+  color: var(--error-color);
+  font-size: .78rem;
+  font-weight: 500;
+}
+
+.form-actions,
+.row-actions { display: flex; gap: .6rem; }
+.form-actions { margin-top: 1.25rem; }
+
+.primary-btn,
+.cancel-btn,
+.edit-btn,
+.delete-btn {
+  border: 0;
+  border-radius: 8px;
+  color: white;
+  cursor: pointer;
+  font-weight: 600;
+  padding: .6rem 1rem;
+  white-space: nowrap;
+}
+
+.primary-btn { background: var(--primary-color); }
+.cancel-btn { background: #64748b; }
+.edit-btn { background: var(--warning-color); }
+.delete-btn { background: var(--error-color); }
+button:disabled { cursor: not-allowed; opacity: .6; }
+
+.alert {
+  border-radius: 10px;
+  margin-bottom: 1rem;
+  padding: .8rem 1rem;
+}
+
+.success-alert { background: #dcfce7; color: #166534; }
+.error-alert { background: #fee2e2; color: #991b1b; }
+
 .search-icon {
   position: absolute;
   left: 1rem;
@@ -275,4 +354,13 @@ tbody tr:last-child td {
   to {
     transform: rotate(360deg);
   }
+}
+
+@media (max-width: 850px) {
+  .form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 560px) {
+  .form-grid { grid-template-columns: 1fr; }
+  .app-container { padding: 1.5rem .75rem; }
 }
