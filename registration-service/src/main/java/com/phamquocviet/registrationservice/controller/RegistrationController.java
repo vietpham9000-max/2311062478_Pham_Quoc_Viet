@@ -4,6 +4,8 @@ import com.phamquocviet.registrationservice.dto.RegistrationRequest;
 import com.phamquocviet.registrationservice.entity.Registration;
 import com.phamquocviet.registrationservice.service.RegistrationService;
 import jakarta.validation.Valid;
+import jakarta.servlet.http.HttpServletRequest;
+import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -44,6 +46,14 @@ public class RegistrationController {
         return ResponseEntity.ok(
                 registrationService.getById(id)
         );
+    }
+
+    @GetMapping("/my")
+    public ResponseEntity<List<Registration>> getMyRegistrations(
+            HttpServletRequest request
+    ) {
+        Long userId = (Long) request.getAttribute("userId");
+        return ResponseEntity.ok(registrationService.getByStudentId(userId));
     }
 
     @DeleteMapping("/{id}")

@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 public class RegistrationService {
@@ -115,6 +116,11 @@ public class RegistrationService {
                                         + id
                         )
                 );
+    }
+
+    @Transactional(readOnly = true)
+    public List<Registration> getByStudentId(Long studentId) {
+        return registrationRepository.findByStudentIdOrderByRegisteredAtDesc(studentId);
     }
 
     @Transactional

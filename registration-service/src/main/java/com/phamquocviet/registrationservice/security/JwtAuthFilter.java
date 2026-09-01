@@ -1,3 +1,77 @@
 package com.phamquocviet.registrationservice.security;
-import io.jsonwebtoken.*; import io.jsonwebtoken.security.Keys; import jakarta.servlet.*; import jakarta.servlet.http.*; import org.springframework.beans.factory.annotation.Value; import org.springframework.security.authentication.UsernamePasswordAuthenticationToken; import org.springframework.security.core.authority.SimpleGrantedAuthority; import org.springframework.security.core.context.SecurityContextHolder; import org.springframework.stereotype.Component; import org.springframework.web.filter.OncePerRequestFilter; import java.io.IOException; import java.util.*;
-@Component public class JwtAuthFilter extends OncePerRequestFilter {private final javax.crypto.SecretKey key;public JwtAuthFilter(@Value("${jwt.secret}")String s){key=Keys.hmacShaKeyFor(Base64.getDecoder().decode(s));}@Override protected void doFilterInternal(HttpServletRequest r,HttpServletResponse p,FilterChain c)throws ServletException,IOException{String h=r.getHeader("Authorization");if(h!=null&&h.startsWith("Bearer "))try{Claims x=Jwts.parser().verifyWith(key).build().parseSignedClaims(h.substring(7)).getPayload();SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(x.getSubject(),null,List.of(new SimpleGrantedAuthority("ROLE_"+x.get("role",String.class)))));}catch(JwtException|IllegalArgumentException e){p.setStatus(401);p.setContentType("application/json");p.getWriter().write("{\"status\":401,\"error\":\"Unauthorized\",\"message\":\"JWT không hợp lệ hoặc đã hết hạn\"}");return;}c.doFilter(r,p);}}
+
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
+
+import javax.crypto.SecretKey;
+import java.io.IOException;
+import java.util.Base64;
+import java.util.List;
+
+@Component
+public class JwtAuthFilter extends OncePerRequestFilter {
+
+    private final SecretKey key;
+
+    public JwtAuthFilter(@Value("${jwt.secret}") String secret) {
+        key = Keys.hmacShaKeyFor(Base64.getDecoder().decode(secret));
+    }
+
+    @Override
+    protected void doFilterInternal(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            FilterChain filterChain
+    ) throws ServletException, IOException {
+        String authorization = request.getHeader("Authorization");
+
+        if (authorization != null && authorization.startsWith("Bearer ")) {
+            try {
+                Claims claims = Jwts.parser()
+                        .verifyWith(key)
+                        .build()
+                        .parseSignedClaims(authorization.substring(7))
+                        .getPayload();
+
+                Number userIdClaim = claims.get("userId", Number.class);
+                if (userIdClaim == null) {
+                    throw new JwtException("JWT thiếu userId");
+                }
+
+                Long userId = userIdClaim.longValue();
+                String role = claims.get("role", String.class);
+                request.setAttribute("userId", userId);
+                request.setAttribute("username", claims.getSubject());
+
+                SecurityContextHolder.getContext().setAuthentication(
+                        new UsernamePasswordAuthenticationToken(
+                                claims.getSubject(),
+                                null,
+                                List.of(new SimpleGrantedAuthority("ROLE_" + role))
+                        )
+                );
+            } catch (JwtException | IllegalArgumentException exception) {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setContentType("application/json");
+                response.getWriter().write(
+                        "{\"status\":401,\"error\":\"Unauthorized\",\"message\":\"JWT không hợp lệ, đã hết hạn hoặc thiếu userId\"}"
+                );
+                return;
+            }
+        }
+
+        filterChain.doFilter(request, response);
+    }
+}
