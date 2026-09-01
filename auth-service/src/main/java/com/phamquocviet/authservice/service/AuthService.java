@@ -20,6 +20,11 @@ public class AuthService {
         User user = users.findByUsername(request.getUsername())
                 .filter(found -> passwordEncoder.matches(request.getPassword(), found.getPassword()))
                 .orElseThrow(() -> new BadCredentialsException("Sai username hoặc password"));
-        return new LoginResponse(jwtUtil.generateToken(user.getUsername(), user.getRole()), user.getUsername(), user.getRole());
+        return new LoginResponse(
+                user.getId(),
+                jwtUtil.generateToken(user.getId(), user.getUsername(), user.getRole()),
+                user.getUsername(),
+                user.getRole()
+        );
     }
 }

@@ -18,9 +18,9 @@ public class JwtUtil {
         this.expirationMs = expirationMs;
     }
 
-    public String generateToken(String username, String role) {
+    public String generateToken(Long userId, String username, String role) {
         Date now = new Date();
-        return Jwts.builder().subject(username).claim("role", role).issuedAt(now)
+        return Jwts.builder().subject(username).claim("role", role).claim("userId", userId).issuedAt(now)
                 .expiration(new Date(now.getTime() + expirationMs)).signWith(key).compact();
     }
 }
