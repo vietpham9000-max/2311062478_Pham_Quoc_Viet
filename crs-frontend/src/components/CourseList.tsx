@@ -6,11 +6,12 @@ interface CourseListProps {
   state: UseCoursesState;
   errorMessage: string;
   refetch: () => void;
-  onEdit: (course: Course) => void;
-  onDelete: (course: Course) => void;
+  onEdit?: (course: Course) => void;
+  onDelete?: (course: Course) => void;
 }
 
 function CourseList({ courses, state, errorMessage, refetch, onEdit, onDelete }: CourseListProps) {
+  const showActions = Boolean(onEdit && onDelete);
   if (state === "loading") {
     return (
       <div className="state-message">
@@ -68,7 +69,7 @@ function CourseList({ courses, state, errorMessage, refetch, onEdit, onDelete }:
             <th>Còn chỗ</th>
             <th>Học phí</th>
             <th>Trạng thái</th>
-            <th>Thao tác</th>
+            {showActions && <th>Thao tác</th>}
           </tr>
         </thead>
 
@@ -92,12 +93,12 @@ function CourseList({ courses, state, errorMessage, refetch, onEdit, onDelete }:
                   {getStatusText(course.status)}
                 </span>
               </td>
-              <td>
+              {showActions && <td>
                 <div className="row-actions">
-                  <button className="edit-btn" type="button" onClick={() => onEdit(course)}>Sửa</button>
-                  <button className="delete-btn" type="button" onClick={() => onDelete(course)}>Xóa</button>
+                  <button className="edit-btn" type="button" onClick={() => onEdit?.(course)}>Sửa</button>
+                  <button className="delete-btn" type="button" onClick={() => onDelete?.(course)}>Xóa</button>
                 </div>
-              </td>
+              </td>}
             </tr>
           ))}
         </tbody>

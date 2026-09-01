@@ -8,3 +8,10 @@ export interface LoginResponse {
   username: string;
   role: "ADMIN" | "STUDENT";
 }
+
+export type UserRole = LoginResponse["role"];
+
+export interface AuthUser {
+  username: string;
+  role: UserRole;
+}
