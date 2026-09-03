@@ -109,7 +109,11 @@ services:
       SPRING_CLOUD_GATEWAY_SERVER_WEBFLUX_ROUTES_3_URI: http://course-service:8082
       SPRING_CLOUD_GATEWAY_SERVER_WEBFLUX_ROUTES_3_PREDICATES_0: Path=/api/public/courses/**
       SPRING_CLOUD_GATEWAY_SERVER_WEBFLUX_ROUTES_3_FILTERS_0: 'RewritePath=/api/public/courses(?<segment>/?.*), /courses$${segment}'
-      GATEWAY_API_KEY: ${GATEWAY_API_KEY:-crs-partner-key-2026}
+      SPRING_CLOUD_GATEWAY_SERVER_WEBFLUX_ROUTES_4_ID: api-key-admin
+      SPRING_CLOUD_GATEWAY_SERVER_WEBFLUX_ROUTES_4_URI: http://auth-service:8081
+      SPRING_CLOUD_GATEWAY_SERVER_WEBFLUX_ROUTES_4_PREDICATES_0: Path=/api/api-keys/**
+      SPRING_CLOUD_GATEWAY_SERVER_WEBFLUX_ROUTES_4_FILTERS_0: StripPrefix=1
+      AUTH_SERVICE_BASE_URL: http://auth-service:8081
     ports:
       - "8080:8080"
     depends_on:
